@@ -6,7 +6,7 @@ function Home() {
       <header className="navbar">
         <a href="#home" className="logo">
           CHICKEN <span>INN</span>
-          <small>GOOD FOOD. GOOD MOOD.</small>
+          <small>LUV DAT CHICKEN</small>
         </a>
         <nav className="nav-links">
           <a href="#home">Home</a>
@@ -127,3 +127,4 @@ function Home() {
     </div>
   );
 }
+export default Home;
