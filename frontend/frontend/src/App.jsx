@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Home from "./Home";
 import Menu from "./Menu";
 import AuthModal from "./AuthModal";
 import Cart from "./Cart";
+import { AuthContext } from "./Context/AuthContext";
+import Checkout from "./Checkout";
+import OrderConfirmation from "./OrderConfirmation";
 
 function App() {
+  const { customer, login, logout } = useContext(AuthContext);
+
   const [cart, setCart] = useState([]);
-  const [customer, setCustomer] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [currentPage, setCurrentPage] = useState("home");
+  const [currentOrder, setCurrentOrder] = useState(null);
 
   // Calculate total cart quantity
   const cartCount = cart.reduce(
@@ -30,7 +35,7 @@ function App() {
 
   // Handle successful demo sign-in or registration
   function handleLogin(customerDetails) {
-    setCustomer(customerDetails);
+    login(customerDetails);
 
     if (selectedItem) {
       setCart((previousCart) => [
@@ -45,9 +50,49 @@ function App() {
     setCurrentPage("cart");
   }
 
+  // Handle customer logout
+  function handleLogout() {
+    logout();
+    setCurrentPage("home");
+    setCart([]);
+  }
+
+  // Account section shared by Menu and Cart navbars
+  function AccountActions() {
+    return (
+      <div className="nav-actions">
+        {customer ? (
+          <>
+            <span className="customer-name">Hi, {customer.name}</span>
+
+            <button className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <button className="login-button" onClick={() => setIsAuthOpen(true)}>
+            Sign In
+          </button>
+        )}
+      </div>
+    );
+  }
+  function handlePlaceOrder(orderDetails) {
+    const newOrder = {
+      ...orderDetails,
+      orderNumber: `CI-${Date.now()}`,
+      status: "Order Received",
+      createdAt: new Date().toLocaleString(),
+    };
+
+    setCurrentOrder(newOrder);
+    setCart([]);
+    setCurrentPage("confirmation");
+  }
+
   return (
     <>
-      {/* Homepage and its navigation */}
+      {/* Homepage */}
       {currentPage === "home" && (
         <Home onNavigate={setCurrentPage} cartCount={cartCount} />
       )}
@@ -92,12 +137,16 @@ function App() {
               </a>
             </nav>
 
-            <button
-              className="order-button"
-              onClick={() => setCurrentPage("cart")}
-            >
-              View Cart →
-            </button>
+            <div className="nav-actions">
+              <AccountActions />
+
+              <button
+                className="order-button"
+                onClick={() => setCurrentPage("cart")}
+              >
+                View Cart →
+              </button>
+            </div>
           </header>
 
           <Menu onAddToCart={handleAddCart} />
@@ -143,6 +192,8 @@ function App() {
 
               <a href="#cart">Cart ({cartCount})</a>
             </nav>
+
+            <AccountActions />
           </header>
 
           <Cart
@@ -155,13 +206,16 @@ function App() {
       )}
 
       {/* Checkout placeholder */}
-      {currentPage === "checkout" && (
-        <div className="checkout-placeholder">
-          <h1>Checkout</h1>
-          <p>We'll build your checkout experience next!</p>
-
-          <button onClick={() => setCurrentPage("cart")}>Back to Cart</button>
-        </div>
+      <Checkout
+        cart={cart}
+        onBackToCart={() => setCurrentPage("cart")}
+        onPlaceOrder={handlePlaceOrder}
+      />
+      {currentPage === "confirmation" && (
+        <OrderConfirmation
+          order={currentOrder}
+          onContinueShopping={() => setCurrentPage("menu")}
+        />
       )}
 
       {/* Authentication popup */}
