@@ -1123,3 +1123,547 @@ a:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =====================================
+   CHICKEN INN MENU PAGE
+===================================== */
+
+.menu-page {
+  min-height: 100vh;
+  padding-bottom: 80px;
+  background: #ffffff;
+}
+
+/* MENU HEADER */
+
+.menu-heading {
+  padding: 75px 7% 55px;
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(255, 199, 44, 0.18),
+      transparent 35%
+    ),
+    #fff8ef;
+}
+
+.menu-heading .section-eyebrow {
+  display: inline-block;
+  margin-bottom: 15px;
+
+  color: #c8102e;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.menu-heading h1 {
+  margin-bottom: 16px;
+
+  color: #171717;
+  font-family: "Montserrat", sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+
+.menu-heading h1 span {
+  color: #c8102e;
+}
+
+.menu-description {
+  max-width: 550px;
+  margin: 0 auto 30px;
+
+  color: #706b69;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+/* SEARCH BAR */
+
+.menu-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  width: 100%;
+  max-width: 540px;
+  min-height: 55px;
+  margin: 0 auto;
+  padding: 0 18px;
+
+  background: #ffffff;
+  border: 1px solid #e9e5e2;
+  border-radius: 9px;
+
+  box-shadow: 0 8px 25px rgba(35, 20, 10, 0.05);
+
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.menu-search:focus-within {
+  border-color: #f58220;
+  box-shadow: 0 0 0 4px rgba(245, 130, 32, 0.12);
+}
+
+.menu-search span {
+  color: #c8102e;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.menu-search input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+
+  color: #171717;
+  background: transparent;
+  border: none;
+  outline: none;
+
+  font-size: 0.9rem;
+}
+
+.menu-search input::placeholder {
+  color: #a49e9b;
+}
+
+/* MENU CONTENT */
+
+.menu-content {
+  width: 100%;
+  max-width: 1450px;
+  margin: 0 auto;
+  padding: 45px 7% 20px;
+}
+
+/* CATEGORY FILTERS */
+
+.category-list {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 45px;
+  padding: 5px 0 12px;
+
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #f58220 #fff8ef;
+}
+
+.category-button {
+  flex-shrink: 0;
+
+  padding: 11px 22px;
+
+  color: #514c49;
+  background: #ffffff;
+  border: 1px solid #e9e5e2;
+  border-radius: 50px;
+
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.category-button:hover {
+  color: #c8102e;
+  border-color: #f58220;
+  transform: translateY(-2px);
+}
+
+.category-button.active {
+  color: #ffffff;
+  background: #c8102e;
+  border-color: #c8102e;
+
+  box-shadow: 0 6px 15px rgba(200, 16, 46, 0.15);
+}
+
+/* MENU RESULTS HEADER */
+
+.menu-results-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  margin-bottom: 25px;
+}
+
+.menu-results-heading h2 {
+  color: #171717;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.65rem;
+  font-weight: 900;
+}
+
+.menu-results-heading p {
+  color: #706b69;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* FOOD GRID */
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+}
+
+/* INDIVIDUAL FOOD CARD */
+
+.menu-card {
+  min-width: 0;
+  overflow: hidden;
+
+  background: #ffffff;
+  border: 1px solid #eee9e5;
+  border-radius: 13px;
+
+  box-shadow: 0 7px 25px rgba(35, 20, 10, 0.055);
+
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.menu-card:hover {
+  border-color: rgba(245, 130, 32, 0.45);
+  box-shadow: 0 16px 35px rgba(35, 20, 10, 0.12);
+  transform: translateY(-6px);
+}
+
+/* FOOD IMAGE */
+
+.menu-card-image {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+  background: #fff1e5;
+}
+
+.menu-card-image img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+
+  transition: transform 0.5s ease;
+}
+
+.menu-card:hover .menu-card-image img {
+  transform: scale(1.07);
+}
+
+/* CATEGORY TAG */
+
+.menu-category-tag {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+
+  padding: 7px 12px;
+
+  color: #171717;
+  background: #ffc72c;
+  border-radius: 50px;
+
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+/* CARD CONTENT */
+
+.menu-card-content {
+  padding: 19px;
+}
+
+.menu-card-content h3 {
+  margin-bottom: 8px;
+
+  color: #171717;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.menu-card-description {
+  min-height: 42px;
+  margin-bottom: 18px;
+
+  color: #77716e;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+/* PRICE AND ADD BUTTON */
+
+.menu-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding-top: 15px;
+  border-top: 1px solid #f0ece9;
+}
+
+.menu-price {
+  color: #c8102e;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.add-to-cart-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 40px;
+  padding: 9px 15px;
+
+  color: #ffffff;
+  background: #c8102e;
+  border: 1px solid #c8102e;
+  border-radius: 7px;
+
+  font-size: 0.82rem;
+  font-weight: 800;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.add-to-cart-button span {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.add-to-cart-button:hover {
+  background: #a30d25;
+  border-color: #a30d25;
+  transform: translateY(-2px);
+}
+
+.add-to-cart-button:active {
+  transform: scale(0.96);
+}
+
+/* EMPTY SEARCH RESULTS */
+
+.menu-empty {
+  padding: 65px 20px;
+  text-align: center;
+
+  background: #fff8ef;
+  border: 1px dashed #f58220;
+  border-radius: 13px;
+}
+
+.menu-empty h3 {
+  margin-bottom: 10px;
+
+  color: #171717;
+  font-family: "Montserrat", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.menu-empty p {
+  margin-bottom: 22px;
+
+  color: #706b69;
+  font-size: 0.9rem;
+}
+
+.menu-empty .menu-button {
+  cursor: pointer;
+}
+
+/* =====================================
+   TABLET RESPONSIVENESS
+===================================== */
+
+@media (max-width: 1000px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+
+  .menu-content {
+    padding-right: 5%;
+    padding-left: 5%;
+  }
+
+  .menu-heading {
+    padding-right: 5%;
+    padding-left: 5%;
+  }
+
+  .menu-card-image {
+    height: 210px;
+  }
+}
+
+/* =====================================
+   MOBILE RESPONSIVENESS
+===================================== */
+
+@media (max-width: 600px) {
+  .menu-heading {
+    padding: 55px 6% 40px;
+  }
+
+  .menu-heading h1 {
+    font-size: 2.5rem;
+    letter-spacing: -1.3px;
+  }
+
+  .menu-description {
+    font-size: 0.9rem;
+  }
+
+  .menu-search {
+    min-height: 50px;
+    padding: 0 13px;
+  }
+
+  .menu-search input {
+    font-size: 0.8rem;
+  }
+
+  .menu-content {
+    padding: 35px 5% 10px;
+  }
+
+  .category-list {
+    gap: 9px;
+    margin-bottom: 30px;
+  }
+
+  .category-button {
+    padding: 10px 17px;
+    font-size: 0.78rem;
+  }
+
+  .menu-results-heading {
+    margin-bottom: 20px;
+  }
+
+  .menu-results-heading h2 {
+    font-size: 1.3rem;
+  }
+
+  .menu-results-heading p {
+    font-size: 0.76rem;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .menu-card {
+    display: grid;
+    grid-template-columns: 38% 1fr;
+    align-items: stretch;
+  }
+
+  .menu-card-image {
+    height: 100%;
+    min-height: 190px;
+  }
+
+  .menu-card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 13px;
+  }
+
+  .menu-card-content h3 {
+    font-size: 0.9rem;
+  }
+
+  .menu-card-description {
+    min-height: 0;
+    margin-bottom: 12px;
+    font-size: 0.76rem;
+  }
+
+  .menu-category-tag {
+    top: 9px;
+    left: 8px;
+    padding: 5px 8px;
+    font-size: 0.62rem;
+  }
+
+  .menu-card-bottom {
+    flex-wrap: wrap;
+    padding-top: 11px;
+  }
+
+  .menu-price {
+    font-size: 0.9rem;
+  }
+
+  .add-to-cart-button {
+    min-height: 35px;
+    padding: 7px 10px;
+    font-size: 0.73rem;
+  }
+}
+
+/* =====================================
+   VERY SMALL PHONES
+===================================== */
+
+@media (max-width: 380px) {
+  .menu-card {
+    grid-template-columns: 34% 1fr;
+  }
+
+  .menu-card-image {
+    min-height: 175px;
+  }
+
+  .menu-card-content {
+    padding: 10px;
+  }
+
+  .menu-card-content h3 {
+    font-size: 0.82rem;
+  }
+
+  .menu-card-description {
+    font-size: 0.7rem;
+  }
+
+  .menu-price {
+    font-size: 0.82rem;
+  }
+
+  .add-to-cart-button {
+    padding: 7px 8px;
+    font-size: 0.68rem;
+  }
+}
