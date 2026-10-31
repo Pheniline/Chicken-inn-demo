@@ -1,11 +1,16 @@
 import { useState, useContext } from "react";
+
 import Home from "./Home";
 import Menu from "./Menu";
 import AuthModal from "./AuthModal";
 import Cart from "./Cart";
-import { AuthContext } from "./Context/AuthContext";
 import Checkout from "./Checkout";
 import OrderConfirmation from "./OrderConfirmation";
+import Contact from "./Contact";
+import Deals from "./Deals";
+import About from "./About";
+
+import { AuthContext } from "./Context/AuthContext";
 
 function App() {
   const { customer, login, logout } = useContext(AuthContext);
@@ -30,7 +35,21 @@ function App() {
       return;
     }
 
-    setCart((previousCart) => [...previousCart, { ...item, quantity: 1 }]);
+    setCart((previousCart) => {
+      const existingItem = previousCart.find(
+        (cartItem) => cartItem.id === item.id,
+      );
+
+      if (existingItem) {
+        return previousCart.map((cartItem) =>
+          cartItem.id === item.id
+            ? { ...cartItem, quantity: cartItem.quantity + 1 }
+            : cartItem,
+        );
+      }
+
+      return [...previousCart, { ...item, quantity: 1 }];
+    });
   }
 
   // Handle successful demo sign-in or registration
@@ -38,10 +57,21 @@ function App() {
     login(customerDetails);
 
     if (selectedItem) {
-      setCart((previousCart) => [
-        ...previousCart,
-        { ...selectedItem, quantity: 1 },
-      ]);
+      setCart((previousCart) => {
+        const existingItem = previousCart.find(
+          (item) => item.id === selectedItem.id,
+        );
+
+        if (existingItem) {
+          return previousCart.map((item) =>
+            item.id === selectedItem.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item,
+          );
+        }
+
+        return [...previousCart, { ...selectedItem, quantity: 1 }];
+      });
 
       setSelectedItem(null);
     }
@@ -57,26 +87,7 @@ function App() {
     setCart([]);
   }
 
-  // Account section shared by Menu and Cart navbars
-  function AccountActions() {
-    return (
-      <div className="nav-actions">
-        {customer ? (
-          <>
-            <span className="customer-name">Hi, {customer.name}</span>
-
-            <button className="logout-button" onClick={handleLogout}>
-              Logout
-            </button>
-          </>
-        ) : (
-          <button className="login-button" onClick={() => setIsAuthOpen(true)}>
-            Sign In
-          </button>
-        )}
-      </div>
-    );
-  }
+  // Handle order placement
   function handlePlaceOrder(orderDetails) {
     const newOrder = {
       ...orderDetails,
@@ -90,6 +101,119 @@ function App() {
     setCurrentPage("confirmation");
   }
 
+  // Shared account navigation
+  function AccountActions() {
+    return (
+      <>
+        {customer ? (
+          <>
+            <span className="customer-name">Hi, {customer.name}</span>
+
+            <button className="logout-button" onClick={handleLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <button className="login-button" onClick={() => setIsAuthOpen(true)}>
+            Sign In
+          </button>
+        )}
+      </>
+    );
+  }
+
+  // Shared navigation bar
+  function Navbar() {
+    return (
+      <header className="navbar">
+        <a
+          href="#home"
+          className="logo"
+          onClick={(event) => {
+            event.preventDefault();
+            setCurrentPage("home");
+          }}
+        >
+          CHICKEN <span>INN</span>
+          <small>LUV DAT CHICKEN</small>
+        </a>
+
+        <nav className="nav-links">
+          <a
+            href="#home"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("home");
+            }}
+          >
+            Home
+          </a>
+
+          <a
+            href="#menu"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("menu");
+            }}
+          >
+            Our Menu
+          </a>
+
+          <a
+            href="#deals"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("deals");
+            }}
+          >
+            Deals
+          </a>
+
+          <a
+            href="#about"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("about");
+            }}
+          >
+            About Us
+          </a>
+
+          <a
+            href="#contact"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("contact");
+            }}
+          >
+            Contact
+          </a>
+
+          <a
+            href="#cart"
+            onClick={(event) => {
+              event.preventDefault();
+              setCurrentPage("cart");
+            }}
+          >
+            Cart ({cartCount})
+          </a>
+        </nav>
+
+        <div className="nav-actions">
+          <AccountActions />
+
+          <button
+            className="order-button"
+            onClick={() => setCurrentPage("cart")}
+          >
+            View Cart →
+          </button>
+        </div>
+      </header>
+    );
+  }
+
   return (
     <>
       {/* Homepage */}
@@ -100,101 +224,39 @@ function App() {
       {/* Menu page */}
       {currentPage === "menu" && (
         <>
-          <header className="navbar">
-            <a
-              href="#home"
-              className="logo"
-              onClick={(event) => {
-                event.preventDefault();
-                setCurrentPage("home");
-              }}
-            >
-              CHICKEN <span>INN</span>
-              <small>LUV DAT CHICKEN</small>
-            </a>
-
-            <nav className="nav-links">
-              <a
-                href="#home"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setCurrentPage("home");
-                }}
-              >
-                Home
-              </a>
-
-              <a href="#menu">Our Menu</a>
-
-              <a
-                href="#cart"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setCurrentPage("cart");
-                }}
-              >
-                Cart ({cartCount})
-              </a>
-            </nav>
-
-            <div className="nav-actions">
-              <AccountActions />
-
-              <button
-                className="order-button"
-                onClick={() => setCurrentPage("cart")}
-              >
-                View Cart →
-              </button>
-            </div>
-          </header>
-
+          <Navbar />
           <Menu onAddToCart={handleAddCart} />
+        </>
+      )}
+
+      {/* Deals page */}
+      {currentPage === "deals" && (
+        <>
+          <Navbar />
+          <Deals onAddToCart={handleAddCart} />
+        </>
+      )}
+
+      {/* About Us page */}
+      {currentPage === "about" && (
+        <>
+          <Navbar />
+          <About />
+        </>
+      )}
+
+      {/* Contact page */}
+      {currentPage === "contact" && (
+        <>
+          <Navbar />
+          <Contact />
         </>
       )}
 
       {/* Cart page */}
       {currentPage === "cart" && (
         <>
-          <header className="navbar">
-            <a
-              href="#home"
-              className="logo"
-              onClick={(event) => {
-                event.preventDefault();
-                setCurrentPage("home");
-              }}
-            >
-              CHICKEN <span>INN</span>
-              <small>LUV DAT CHICKEN</small>
-            </a>
-
-            <nav className="nav-links">
-              <a
-                href="#home"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setCurrentPage("home");
-                }}
-              >
-                Home
-              </a>
-
-              <a
-                href="#menu"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setCurrentPage("menu");
-                }}
-              >
-                Our Menu
-              </a>
-
-              <a href="#cart">Cart ({cartCount})</a>
-            </nav>
-
-            <AccountActions />
-          </header>
+          <Navbar />
 
           <Cart
             cart={cart}
@@ -205,12 +267,20 @@ function App() {
         </>
       )}
 
-      {/* Checkout placeholder */}
-      <Checkout
-        cart={cart}
-        onBackToCart={() => setCurrentPage("cart")}
-        onPlaceOrder={handlePlaceOrder}
-      />
+      {/* Checkout page */}
+      {currentPage === "checkout" && (
+        <>
+          <Navbar />
+
+          <Checkout
+            cart={cart}
+            onBackToCart={() => setCurrentPage("cart")}
+            onPlaceOrder={handlePlaceOrder}
+          />
+        </>
+      )}
+
+      {/* Order confirmation page */}
       {currentPage === "confirmation" && (
         <OrderConfirmation
           order={currentOrder}

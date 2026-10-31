@@ -76,6 +76,15 @@ function Home({ onNavigate, cartCount }) {
           >
             Cart ({cartCount})
           </a>
+          <a
+            href="#contact"
+            onClick={(event) => {
+              event.preventDefault();
+              setcurrentPage("contact");
+            }}
+          >
+            Contact
+          </a>
         </nav>
 
         <button className="order-button" onClick={() => onNavigate("menu")}>
