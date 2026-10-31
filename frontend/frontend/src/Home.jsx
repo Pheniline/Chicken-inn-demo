@@ -1,22 +1,86 @@
 import "./App.css";
 
-function Home() {
+function Home({ onNavigate, cartCount }) {
   return (
     <div className="website">
       <header className="navbar">
-        <a href="#home" className="logo">
+        <a
+          href="#home"
+          className="logo"
+          onClick={(event) => {
+            event.preventDefault();
+            onNavigate("home");
+          }}
+        >
           CHICKEN <span>INN</span>
           <small>LUV DAT CHICKEN</small>
         </a>
+
         <nav className="nav-links">
-          <a href="#home">Home</a>
-          <a href="#menu">Our Menu</a>
-          <a href="#deals">Deals</a>
-          <a href="#about">About Us</a>
+          <a
+            href="#home"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("home");
+            }}
+          >
+            Home
+          </a>
+
+          <a
+            href="#menu"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("menu");
+            }}
+          >
+            Our Menu
+          </a>
+
+          <a
+            href="#deals"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("home");
+              setTimeout(() => {
+                document.getElementById("deals")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }, 0);
+            }}
+          >
+            Deals
+          </a>
+
+          <a
+            href="#about"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("home");
+              setTimeout(() => {
+                document.getElementById("about")?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }, 0);
+            }}
+          >
+            About Us
+          </a>
+
+          <a
+            href="#cart"
+            onClick={(event) => {
+              event.preventDefault();
+              onNavigate("cart");
+            }}
+          >
+            Cart ({cartCount})
+          </a>
         </nav>
-        <a href="#menu" className="order-button">
+
+        <button className="order-button" onClick={() => onNavigate("menu")}>
           Order Now <span>→</span>
-        </a>
+        </button>
       </header>
 
       <main>
@@ -40,9 +104,12 @@ function Home() {
             </p>
 
             <div className="hero-actions">
-              <a href="#menu" className="primary-button">
+              <button
+                className="primary-button"
+                onClick={() => onNavigate("menu")}
+              >
                 Explore Our Menu →
-              </a>
+              </button>
 
               <a href="#deals" className="secondary-button">
                 View Deals
@@ -105,7 +172,7 @@ function Home() {
           </div>
         </section>
 
-        <section className="menu-intro" id="menu">
+        <section className="menu-intro" id="menu-intro">
           <p className="eyebrow">WHAT ARE YOU CRAVING?</p>
           <h2>
             Good food starts <span>here.</span>
@@ -115,9 +182,9 @@ function Home() {
             delicious for today.
           </p>
 
-          <a href="#deals" className="primary-button">
+          <button className="primary-button" onClick={() => onNavigate("menu")}>
             Discover What's Next →
-          </a>
+          </button>
         </section>
 
         <section className="deals-anchor" id="deals">
@@ -127,4 +194,5 @@ function Home() {
     </div>
   );
 }
+
 export default Home;
