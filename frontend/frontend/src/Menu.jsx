@@ -1,7 +1,7 @@
 import "./App.css";
 import { useMemo, useState } from "react"; // useState remembers the selected category and search text
 
-const menuItem = [
+const menuItems = [
   // Menutem stores our sample food data in one place
   {
     id: 1,
@@ -10,7 +10,7 @@ const menuItem = [
     price: 450,
     category: "Chicken",
     image:
-      "https: //images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=700&auto=format&fit=crop&q=80",
+      "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=700&auto=format&fit=crop&q=80",
   },
   {
     id: 2,
