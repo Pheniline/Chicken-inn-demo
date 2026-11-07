@@ -66,6 +66,19 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
+    checkoutRequestId: {
+      type: String,
+      default: null,
+    },
+    merchantRequestId: {
+      type: String,
+      default: null,
+    },
+    paymentPhone: {
+      type: String,
+      default: null,
+    },
+
     // Order financial details
     subtotal: {
       type: Number,
@@ -113,6 +126,10 @@ const orderSchema = new mongoose.Schema(
     },
 
     mpesaReceiptNumber: {
+      type: String,
+      default: null,
+    },
+    mpesaResultDescription: {
       type: String,
       default: null,
     },
