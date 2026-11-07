@@ -193,3 +193,20 @@ export const initiateStkPush = async (req, res) => {
     });
   }
 };
+// 3. Receive M-Pesa payment callback
+export const mpesaCallback = async (req, res) => {
+  try {
+    console.log("M-Pesa Callback Received:", JSON.stringify(req.body, null, 2));
+
+    return res.status(200).json({
+      ResultCode: 0,
+      ResultDesc: "Callback received successfully",
+    });
+  } catch (error) {
+    console.error("Callback error:", error.message);
+
+    return res.status(500).json({
+      message: "Callback processing failed",
+    });
+  }
+};
