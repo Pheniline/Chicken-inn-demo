@@ -1,39 +1,33 @@
 import axios from "axios";
 import Order from "../models/Order.js";
 
-// ==========================================
-// 1. TEST DARAJA CONNECTION
-// ==========================================
+// Get an access token from Safaricom Daraja
+const getAccessToken = async () => {
+  const consumerKey = process.env.DARAJA_CONSUMER_KEY;
+  const consumerSecret = process.env.DARAJA_CONSUMER_SECRET;
 
+  const credentials = Buffer.from(`${consumerKey}:${consumerSecret}`).toString(
+    "base64",
+  );
+
+  const response = await axios.get(
+    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    {
+      headers: {
+        Authorization: `Basic ${credentials}`,
+      },
+    },
+  );
+
+  return response.data.access_token;
+};
+
+// Test Daraja connection
 export const testDarajaConnection = async (req, res) => {
   try {
-    const consumerKey = process.env.DARAJA_CONSUMER_KEY;
-    const consumerSecret = process.env.DARAJA_CONSUMER_SECRET;
+    await getAccessToken();
 
-    if (!consumerKey || !consumerSecret) {
-      return res.status(500).json({
-        message: "Daraja credentials are missing from the environment.",
-      });
-    }
-
-    const credentials = Buffer.from(
-      `${consumerKey}:${consumerSecret}`,
-    ).toString("base64");
-
-    const response = await axios.get(
-      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-      {
-        headers: {
-          Authorization: `Basic ${credentials}`,
-        },
-      },
-    );
-
-    if (!response.data.access_token) {
-      throw new Error("No access token returned.");
-    }
-
-    return res.status(200).json({
+    res.status(200).json({
       message: "Successfully connected to Daraja Sandbox!",
     });
   } catch (error) {
@@ -42,16 +36,13 @@ export const testDarajaConnection = async (req, res) => {
       error.response?.data || error.message,
     );
 
-    return res.status(500).json({
-      message: "Could not connect to Daraja Sandbox.",
+    res.status(500).json({
+      message: "Could not connect to Daraja Sandbox",
     });
   }
 };
 
-// ==========================================
-// 2. INITIATE M-PESA STK PUSH
-// ==========================================
-
+// Initiate M-Pesa STK Push
 export const initiateStkPush = async (req, res) => {
   try {
     const { orderId, phone } = req.body;
@@ -62,10 +53,7 @@ export const initiateStkPush = async (req, res) => {
       });
     }
 
-    const order = await Order.findOne({
-      _id: orderId,
-      customerId: req.customer._id,
-    });
+    const order = await Order.findById(orderId);
 
     if (!order) {
       return res.status(404).json({
@@ -81,90 +69,57 @@ export const initiateStkPush = async (req, res) => {
 
     if (order.checkoutRequestId) {
       return res.status(400).json({
-        message: "A payment request has already been submitted for this order.",
+        message: "An M-Pesa payment request already exists for this order.",
       });
     }
 
-    // Format Kenyan phone number
-    let formattedPhone = phone.replace(/\s+/g, "");
-
-    if (formattedPhone.startsWith("0")) {
-      formattedPhone = "254" + formattedPhone.slice(1);
-    } else if (formattedPhone.startsWith("+254")) {
-      formattedPhone = formattedPhone.slice(1);
-    }
+    const formattedPhone = phone.replace(/\D/g, "");
 
     if (!/^254[17]\d{8}$/.test(formattedPhone)) {
       return res.status(400).json({
-        message: "Enter a valid Kenyan phone number.",
+        message: "Enter a valid Kenyan phone number beginning with 254.",
       });
     }
 
-    const consumerKey = process.env.DARAJA_CONSUMER_KEY;
-    const consumerSecret = process.env.DARAJA_CONSUMER_SECRET;
+    const accessToken = await getAccessToken();
+
     const shortcode = process.env.DARAJA_SHORTCODE;
     const passkey = process.env.DARAJA_PASSKEY;
-    const callbackUrl = process.env.DARAJA_CALLBACK_URL;
 
-    if (
-      !consumerKey ||
-      !consumerSecret ||
-      !shortcode ||
-      !passkey ||
-      !callbackUrl ||
-      !callbackUrl.startsWith("https://")
-    ) {
-      return res.status(500).json({
-        message: "Daraja configuration is incomplete.",
-      });
-    }
+    const timestamp = new Date()
+      .toLocaleString("en-GB", {
+        timeZone: "Africa/Nairobi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+      .replace(/\D/g, "");
 
-    // Generate OAuth access token
-    const credentials = Buffer.from(
-      `${consumerKey}:${consumerSecret}`,
-    ).toString("base64");
-
-    const tokenResponse = await axios.get(
-      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-      {
-        headers: {
-          Authorization: `Basic ${credentials}`,
-        },
-      },
-    );
-
-    const accessToken = tokenResponse.data.access_token;
-
-    if (!accessToken) {
-      throw new Error("Daraja access token was not returned.");
-    }
-
-    // Generate timestamp
-    const date = new Date();
-
-    const timestamp =
-      date.getFullYear().toString() +
-      String(date.getMonth() + 1).padStart(2, "0") +
-      String(date.getDate()).padStart(2, "0") +
-      String(date.getHours()).padStart(2, "0") +
-      String(date.getMinutes()).padStart(2, "0") +
-      String(date.getSeconds()).padStart(2, "0");
-
-    // Generate STK password
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString(
       "base64",
     );
 
-    // Validate order amount
     const amount = Math.round(order.total);
 
-    if (!Number.isSafeInteger(amount) || amount < 1) {
+    if (amount < 1) {
       return res.status(400).json({
-        message: "The order amount is invalid.",
+        message: "Invalid payment amount.",
       });
     }
 
-    // Send STK Push request
+    const callbackUrl = process.env.DARAJA_CALLBACK_URL;
+
+    if (!callbackUrl) {
+      return res.status(500).json({
+        message:
+          "M-Pesa callback URL is missing from the environment configuration.",
+      });
+    }
+
     const stkResponse = await axios.post(
       "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
       {
@@ -177,7 +132,7 @@ export const initiateStkPush = async (req, res) => {
         PartyB: shortcode,
         PhoneNumber: formattedPhone,
         CallBackURL: callbackUrl,
-        AccountReference: `ORDER-${order._id.toString().slice(-8)}`,
+        AccountReference: `CI-${order._id.toString().slice(-8)}`,
         TransactionDesc: "Chicken Inn Order Payment",
       },
       {
@@ -188,79 +143,47 @@ export const initiateStkPush = async (req, res) => {
       },
     );
 
-    if (
-      stkResponse.data.ResponseCode !== "0" ||
-      !stkResponse.data.CheckoutRequestID
-    ) {
-      return res.status(502).json({
-        message:
-          stkResponse.data.ResponseDescription ||
-          "Safaricom did not accept the payment request.",
+    const result = stkResponse.data;
+
+    console.log("STK Push response:", result);
+
+    if (result.ResponseCode !== "0" || !result.CheckoutRequestID) {
+      return res.status(400).json({
+        message: result.ResponseDescription || "M-Pesa request failed.",
       });
     }
 
-    // Save payment request details
-    order.checkoutRequestId = stkResponse.data.CheckoutRequestID;
-    order.merchantRequestId = stkResponse.data.MerchantRequestID;
+    order.checkoutRequestId = result.CheckoutRequestID;
+    order.merchantRequestId = result.MerchantRequestID;
     order.paymentPhone = formattedPhone;
 
     await order.save();
 
     return res.status(200).json({
-      message: stkResponse.data.CustomerMessage || "Payment request submitted.",
-      checkoutRequestId: stkResponse.data.CheckoutRequestID,
+      message: "Success. Request accepted for processing",
+      checkoutRequestId: result.CheckoutRequestID,
     });
   } catch (error) {
     console.error("STK Push error:", error.response?.data || error.message);
 
     return res.status(500).json({
       message: "Could not initiate M-Pesa payment.",
+      error: error.response?.data || error.message,
     });
   }
 };
 
-// ==========================================
-// 3. PROCESS M-PESA CALLBACK
-// ==========================================
-
+// Receive Safaricom payment callback
 export const mpesaCallback = async (req, res) => {
+  console.log("========== MPESA CALLBACK ARRIVED ==========");
+  console.log("Request method:", req.method);
+  console.log("Request body:", JSON.stringify(req.body, null, 2));
+
   try {
-    // NEW: Log every incoming callback request
-    console.log("========== MPESA CALLBACK ARRIVED ==========");
-    console.log("Request method:", req.method);
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    const callback = req.body?.Body?.stkCallback;
 
-    const stkCallback = req.body?.Body?.stkCallback;
-
-    if (!stkCallback) {
-      console.error("Invalid M-Pesa callback structure.");
-
-      return res.status(400).json({
-        message: "Invalid callback structure.",
-      });
-    }
-
-    const checkoutRequestId = stkCallback.CheckoutRequestID;
-    const resultCode = Number(stkCallback.ResultCode);
-
-    if (!checkoutRequestId || !Number.isInteger(resultCode)) {
-      return res.status(400).json({
-        message: "Callback is missing required information.",
-      });
-    }
-
-    console.log(
-      "M-Pesa callback received:",
-      checkoutRequestId,
-      stkCallback.ResultDesc,
-    );
-
-    const order = await Order.findOne({
-      checkoutRequestId,
-    });
-
-    if (!order) {
-      console.error("No order found for checkout request:", checkoutRequestId);
+    if (!callback) {
+      console.log("Invalid or missing callback data.");
 
       return res.status(200).json({
         ResultCode: 0,
@@ -268,64 +191,95 @@ export const mpesaCallback = async (req, res) => {
       });
     }
 
-    // Prevent duplicate successful callbacks
-    if (order.paymentStatus === "Completed") {
+    const checkoutRequestId = callback.CheckoutRequestID;
+    const resultCode = callback.ResultCode;
+    const resultDescription = callback.ResultDesc;
+
+    console.log("Checkout Request ID:", checkoutRequestId);
+    console.log("Result Code:", resultCode);
+    console.log("Result Description:", resultDescription);
+
+    const order = await Order.findOne({ checkoutRequestId });
+
+    if (!order) {
+      console.log("No order found for this checkout request.");
+
       return res.status(200).json({
         ResultCode: 0,
-        ResultDesc: "Payment already processed.",
+        ResultDesc: "Callback received.",
       });
     }
 
-    // Handle failed or cancelled payment
-    if (resultCode !== 0) {
-      order.paymentStatus = "Failed";
-      order.mpesaResultDescription =
-        stkCallback.ResultDesc || "Payment failed or cancelled.";
-
-      await order.save();
-
-      console.log("Payment failed or cancelled:", stkCallback.ResultDesc);
+    // Ignore duplicate successful callbacks
+    if (order.paymentStatus === "Completed") {
+      console.log("Payment was already processed.");
 
       return res.status(200).json({
         ResultCode: 0,
-        ResultDesc: "Payment failure recorded.",
+        ResultDesc: "Callback already processed.",
+      });
+    }
+
+    // Payment was cancelled or failed
+    if (resultCode !== 0) {
+      order.paymentStatus = "Failed";
+      order.mpesaResultDescription = resultDescription;
+
+      await order.save();
+
+      console.log("Payment failed or was cancelled.");
+
+      return res.status(200).json({
+        ResultCode: 0,
+        ResultDesc: "Callback processed.",
       });
     }
 
     // Extract successful payment details
-    const items = stkCallback.CallbackMetadata?.Item || [];
+    const items = callback.CallbackMetadata?.Item || [];
 
-    const getValue = (name) => items.find((item) => item.Name === name)?.Value;
+    const getMetadataValue = (name) =>
+      items.find((item) => item.Name === name)?.Value;
 
-    const amount = Number(getValue("Amount"));
-    const receipt = getValue("MpesaReceiptNumber");
-    const phone = String(getValue("PhoneNumber") || "");
+    const amount = getMetadataValue("Amount");
+    const receiptNumber = getMetadataValue("MpesaReceiptNumber");
+    const phoneNumber = getMetadataValue("PhoneNumber");
 
-    // Verify payment details against the order
+    console.log("Paid amount:", amount);
+    console.log("M-Pesa receipt:", receiptNumber);
+    console.log("Payment phone:", phoneNumber);
+
+    // Verify the returned payment details
     if (
-      !receipt ||
-      !Number.isFinite(amount) ||
-      amount !== Math.round(order.total) ||
-      phone !== order.paymentPhone
+      amount == null ||
+      !receiptNumber ||
+      Number(amount) !== Math.round(order.total) ||
+      String(phoneNumber) !== String(order.paymentPhone)
     ) {
-      console.error("Payment details require verification:", checkoutRequestId);
+      order.paymentStatus = "Failed";
+      order.mpesaResultDescription = "Payment details did not match the order.";
+
+      await order.save();
+
+      console.log("Payment details did not match the order.");
 
       return res.status(200).json({
         ResultCode: 0,
-        ResultDesc: "Payment details require verification.",
+        ResultDesc: "Callback processed.",
       });
     }
 
-    // Record successful payment
+    // Mark order as paid
     order.paymentStatus = "Completed";
     order.status = "Paid";
-    order.mpesaReceiptNumber = receipt;
-    order.mpesaResultDescription =
-      stkCallback.ResultDesc || "Payment completed successfully.";
+    order.mpesaReceiptNumber = receiptNumber;
+    order.mpesaResultDescription = resultDescription;
 
     await order.save();
 
-    console.log("Payment completed successfully:", receipt);
+    console.log("========== PAYMENT SUCCESSFUL ==========");
+    console.log("Order ID:", order._id);
+    console.log("Receipt:", receiptNumber);
 
     return res.status(200).json({
       ResultCode: 0,
@@ -333,12 +287,13 @@ export const mpesaCallback = async (req, res) => {
     });
   } catch (error) {
     console.error(
-      "M-Pesa callback error:",
+      "M-Pesa callback processing error:",
       error.response?.data || error.message,
     );
 
-    return res.status(500).json({
-      message: "Callback processing failed.",
+    return res.status(200).json({
+      ResultCode: 0,
+      ResultDesc: "Callback received.",
     });
   }
 };
