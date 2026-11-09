@@ -1,4 +1,5 @@
 import { useState, useContext } from "react";
+import axios from "axios";
 
 import Home from "./Home";
 import Menu from "./Menu";
@@ -13,7 +14,7 @@ import About from "./About";
 import { AuthContext } from "./Context/AuthContext";
 
 function App() {
-  const { customer, login, logout } = useContext(AuthContext);
+  const { customer, token, login, logout } = useContext(AuthContext);
 
   const [cart, setCart] = useState([]);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -29,7 +30,7 @@ function App() {
 
   // Handle adding food to cart
   function handleAddCart(item) {
-    if (!customer) {
+    if (!customer || !token) {
       setSelectedItem(item);
       setIsAuthOpen(true);
       return;
@@ -52,9 +53,9 @@ function App() {
     });
   }
 
-  // Handle successful demo sign-in or registration
-  function handleLogin(customerDetails) {
-    login(customerDetails);
+  // Handle successful backend login or registration
+  function handleLogin(customerDetails, authToken) {
+    login(customerDetails, authToken);
 
     if (selectedItem) {
       setCart((previousCart) => {
@@ -87,27 +88,74 @@ function App() {
     setCart([]);
   }
 
-  // Handle order placement
-  function handlePlaceOrder(orderDetails) {
-    const newOrder = {
-      ...orderDetails,
-      orderNumber: `CI-${Date.now()}`,
-      status: "Order Received",
-      createdAt: new Date().toLocaleString(),
-    };
+  // Save order in MongoDB
+  async function handlePlaceOrder(orderDetails) {
+    try {
+      if (!token) {
+        alert("Your session has expired. Please sign in again.");
+        setIsAuthOpen(true);
+        return;
+      }
 
-    setCurrentOrder(newOrder);
-    setCart([]);
-    setCurrentPage("confirmation");
+      const response = await axios.post(
+        "http://localhost:5000/api/orders",
+        orderDetails,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      // Get the actual order returned by MongoDB
+      const savedOrder = response.data.order;
+      const paymentResponse = await axios.post(
+        "http://localhost:5000/api/payments/stk-push",
+        {
+          orderId: savedOrder._id,
+          phone: savedOrder.customer.phone,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log("M-Pesa response:", paymentResponse.data);
+
+      // Format it for our existing confirmation page
+      const formattedOrder = {
+        ...savedOrder,
+        orderNumber: `CI-${savedOrder._id.slice(-8)}`,
+        customer: savedOrder.customer,
+      };
+
+      setCurrentOrder(formattedOrder);
+      setCart([]);
+      setCurrentPage("confirmation");
+    } catch (error) {
+      console.error(
+        "Order submission error:",
+        error.response?.data || error.message,
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "We could not save your order. Please try again.",
+      );
+    }
   }
 
   // Shared account navigation
   function AccountActions() {
     return (
       <>
-        {customer ? (
+        {customer && token ? (
           <>
-            <span className="customer-name">Hi, {customer.name}</span>
+            <span className="customer-name">
+              Hi, {customer.fullName || customer.name}
+            </span>
 
             <button className="logout-button" onClick={handleLogout}>
               Logout

@@ -2,20 +2,39 @@ import Customer from "../models/Customer.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// Generate authentication token
+function generateToken(customerId) {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is missing from environment variables.");
+  }
+
+  return jwt.sign({ id: customerId }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
+}
+
 // REGISTER CUSTOMER
 export const registerCustomer = async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
-    // Check required fields
     if (!fullName || !email || !phone || !password) {
       return res.status(400).json({
         message: "Please fill in all required fields.",
       });
     }
 
-    // Check if customer already exists
-    const existingCustomer = await Customer.findOne({ email });
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must contain at least 6 characters.",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingCustomer = await Customer.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingCustomer) {
       return res.status(409).json({
@@ -23,19 +42,20 @@ export const registerCustomer = async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create customer
     const customer = await Customer.create({
-      fullName,
-      email,
-      phone,
+      fullName: fullName.trim(),
+      email: normalizedEmail,
+      phone: phone.trim(),
       password: hashedPassword,
     });
 
-    res.status(201).json({
+    const token = generateToken(customer._id);
+
+    return res.status(201).json({
       message: "Account created successfully!",
+      token,
       customer: {
         id: customer._id,
         fullName: customer.fullName,
@@ -44,9 +64,10 @@ export const registerCustomer = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Registration error:", error);
+
+    return res.status(500).json({
       message: "Registration failed.",
-      error: error.message,
     });
   }
 };
@@ -56,7 +77,17 @@ export const loginCustomer = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const customer = await Customer.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required.",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const customer = await Customer.findOne({
+      email: normalizedEmail,
+    });
 
     if (!customer) {
       return res.status(401).json({
@@ -64,7 +95,6 @@ export const loginCustomer = async (req, res) => {
       });
     }
 
-    // Compare passwords
     const passwordMatch = await bcrypt.compare(password, customer.password);
 
     if (!passwordMatch) {
@@ -73,12 +103,9 @@ export const loginCustomer = async (req, res) => {
       });
     }
 
-    // Generate authentication token
-    const token = jwt.sign({ id: customer._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = generateToken(customer._id);
 
-    res.json({
+    return res.status(200).json({
       message: "Login successful!",
       token,
       customer: {
@@ -89,9 +116,10 @@ export const loginCustomer = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Login error:", error);
+
+    return res.status(500).json({
       message: "Login failed.",
-      error: error.message,
     });
   }
 };

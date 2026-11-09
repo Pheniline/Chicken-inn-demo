@@ -1,43 +1,101 @@
 import express from "express";
+import Order from "../models/Order.js";
+import protect from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Temporary orders storage
-let orders = [];
+// ==========================================
+// CREATE A NEW ORDER
+// ==========================================
 
-// CREATE a new order
-router.post("/", (req, res) => {
-  const { customer, items, subtotal, deliveryFee, total } = req.body;
+router.post("/", protect, async (req, res) => {
+  try {
+    const { customer, items, subtotal, deliveryFee, total } = req.body;
 
-  // Basic validation
-  if (!customer || !items || items.length === 0) {
-    return res.status(400).json({
-      message: "Customer details and order items are required.",
+    // Validate delivery information
+    if (
+      !customer ||
+      !customer.fullName ||
+      !customer.phone ||
+      !customer.county ||
+      !customer.town ||
+      !customer.estate ||
+      !customer.building
+    ) {
+      return res.status(400).json({
+        message: "Please complete all required delivery details.",
+      });
+    }
+
+    // Validate order items
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        message: "Your order must contain at least one item.",
+      });
+    }
+
+    // Save order in MongoDB
+    const newOrder = await Order.create({
+      customerId: req.customer._id,
+
+      customer: {
+        fullName: customer.fullName,
+        phone: customer.phone,
+        county: customer.county,
+        town: customer.town,
+        estate: customer.estate,
+        building: customer.building,
+        instructions: customer.instructions || "",
+      },
+
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity || 1,
+      })),
+
+      subtotal,
+      deliveryFee,
+      total,
+
+      status: "Pending Payment",
+      paymentMethod: "M-Pesa",
+      paymentStatus: "Pending",
+    });
+
+    return res.status(201).json({
+      message: "Order saved successfully!",
+      order: newOrder,
+    });
+  } catch (error) {
+    console.error("Create order error:", error);
+
+    return res.status(500).json({
+      message: "Could not save your order.",
+      error: error.message,
     });
   }
-
-  const newOrder = {
-    id: Date.now(),
-    customer,
-    items,
-    subtotal,
-    deliveryFee,
-    total,
-    status: "Pending Payment",
-    createdAt: new Date(),
-  };
-
-  orders.push(newOrder);
-
-  res.status(201).json({
-    message: "Order received successfully!",
-    order: newOrder,
-  });
 });
 
-// GET all orders (temporary testing endpoint)
-router.get("/", (req, res) => {
-  res.json(orders);
+// ==========================================
+// GET CUSTOMER ORDERS
+// ==========================================
+
+router.get("/my-orders", protect, async (req, res) => {
+  try {
+    const orders = await Order.find({
+      customerId: req.customer._id,
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json(orders);
+  } catch (error) {
+    console.error("Fetch orders error:", error);
+
+    return res.status(500).json({
+      message: "Could not retrieve orders.",
+    });
+  }
 });
 
 export default router;

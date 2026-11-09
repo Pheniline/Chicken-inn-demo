@@ -42,7 +42,7 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
-    // Food items in the order
+    // Food items
     items: [
       {
         id: {
@@ -66,6 +66,7 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
+    // M-Pesa information
     checkoutRequestId: {
       type: String,
       default: null,
@@ -79,19 +80,17 @@ const orderSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Order financial details
+    // Financial details
     subtotal: {
       type: Number,
       required: true,
       min: 0,
     },
-
     deliveryFee: {
       type: Number,
       required: true,
       min: 0,
     },
-
     total: {
       type: Number,
       required: true,
@@ -112,19 +111,17 @@ const orderSchema = new mongoose.Schema(
       default: "Pending Payment",
     },
 
-    // Payment information
+    // Payment details
     paymentMethod: {
       type: String,
       enum: ["M-Pesa", "Cash"],
       default: "M-Pesa",
     },
-
     paymentStatus: {
       type: String,
       enum: ["Pending", "Completed", "Failed"],
       default: "Pending",
     },
-
     mpesaReceiptNumber: {
       type: String,
       default: null,
@@ -139,7 +136,12 @@ const orderSchema = new mongoose.Schema(
   },
 );
 
-// Create the Order model
+// Create the Mongoose model
 const Order = mongoose.model("Order", orderSchema);
+
+// Temporary diagnostic checks
+console.log("Model name:", Order.modelName);
+console.log("Find method:", typeof Order.find);
+console.log("Create method:", typeof Order.create);
 
 export default Order;

@@ -1,11 +1,9 @@
 import { createContext, useState, useEffect } from "react";
 
-// Create authentication context
 export const AuthContext = createContext();
 
-// Create provider
 export function AuthProvider({ children }) {
-  // Restore customer details when the app loads
+  // Restore customer details
   const [customer, setCustomer] = useState(() => {
     const savedCustomer = localStorage.getItem("customer");
 
@@ -17,7 +15,12 @@ export function AuthProvider({ children }) {
     }
   });
 
-  // Save customer details whenever they change
+  // Restore authentication token
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || null;
+  });
+
+  // Save customer details
   useEffect(() => {
     if (customer) {
       localStorage.setItem("customer", JSON.stringify(customer));
@@ -26,23 +29,35 @@ export function AuthProvider({ children }) {
     }
   }, [customer]);
 
-  // Login function
-  function login(customerDetails) {
+  // Save token
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem("token", token);
+    } else {
+      localStorage.removeItem("token");
+    }
+  }, [token]);
+
+  // Login
+  function login(customerDetails, authToken) {
     setCustomer(customerDetails);
+    setToken(authToken);
   }
 
-  // Logout function
+  // Logout
   function logout() {
     setCustomer(null);
+    setToken(null);
   }
 
   return (
     <AuthContext.Provider
       value={{
         customer,
+        token,
         login,
         logout,
-        isAuthenticated: Boolean(customer),
+        isAuthenticated: Boolean(customer && token),
       }}
     >
       {children}

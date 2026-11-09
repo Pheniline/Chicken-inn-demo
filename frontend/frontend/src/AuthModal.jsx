@@ -1,39 +1,57 @@
 import { useState } from "react";
+import axios from "axios";
 import "./App.css";
 
 function AuthModal({ isOpen, onClose, onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   if (!isOpen) return null;
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!email.trim() || !password.trim()) {
-      alert("Please enter your email and password.");
-      return;
+    setErrorMessage("");
+    setLoading(true);
+
+    try {
+      const endpoint = isLogin
+        ? "http://localhost:5000/api/auth/login"
+        : "http://localhost:5000/api/auth/register";
+
+      const requestData = isLogin
+        ? { email, password }
+        : {
+            fullName: name,
+            email,
+            phone,
+            password,
+          };
+
+      const response = await axios.post(endpoint, requestData);
+
+      const { customer, token } = response.data;
+
+      onLogin(customer, token);
+
+      setName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+    } catch (error) {
+      setErrorMessage(
+        error.response?.data?.message ||
+          "Something went wrong. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    if (!isLogin && !name.trim()) {
-      alert("Please enter your full name.");
-      return;
-    }
-
-    // Temporary demo authentication.
-    // Real authentication will be connected to our backend later.
-    const customer = {
-      name: isLogin ? email.split("@")[0] : name,
-      email,
-    };
-
-    onLogin(customer);
-
-    setName("");
-    setEmail("");
-    setPassword("");
   }
 
   return (
@@ -62,17 +80,31 @@ function AuthModal({ isOpen, onClose, onLogin }) {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {!isLogin && (
-            <div className="auth-field">
-              <label htmlFor="customer-name">Full Name</label>
-              <input
-                id="customer-name"
-                type="text"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                required
-              />
-            </div>
+            <>
+              <div className="auth-field">
+                <label htmlFor="customer-name">Full Name</label>
+                <input
+                  id="customer-name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="auth-field">
+                <label htmlFor="customer-phone">Phone Number</label>
+                <input
+                  id="customer-phone"
+                  type="tel"
+                  placeholder="e.g. 0712345678"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  required
+                />
+              </div>
+            </>
           )}
 
           <div className="auth-field">
@@ -100,8 +132,14 @@ function AuthModal({ isOpen, onClose, onLogin }) {
             />
           </div>
 
-          <button className="auth-submit" type="submit">
-            {isLogin ? "Sign In" : "Create Account"}
+          {errorMessage && <p className="auth-error">{errorMessage}</p>}
+
+          <button className="auth-submit" type="submit" disabled={loading}>
+            {loading
+              ? "Please wait..."
+              : isLogin
+                ? "Sign In"
+                : "Create Account"}
           </button>
         </form>
 
@@ -110,15 +148,16 @@ function AuthModal({ isOpen, onClose, onLogin }) {
             {isLogin ? "Don't have an account?" : "Already have an account?"}
           </p>
 
-          <button type="button" onClick={() => setIsLogin(!isLogin)}>
+          <button
+            type="button"
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setErrorMessage("");
+            }}
+          >
             {isLogin ? "Create Account" : "Sign In"}
           </button>
         </div>
-
-        <p className="auth-demo-note">
-          This is a demonstration account flow. Secure authentication will be
-          implemented with our backend.
-        </p>
       </div>
     </div>
   );
